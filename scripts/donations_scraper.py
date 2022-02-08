@@ -121,9 +121,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-l", "--url", help="website link to visit")
-    parser.add_argument("-u", "--username", help="username to log in with")
-    parser.add_argument("-p", "--password", help="password to log in with")
+    parser.add_argument("-l", "--url", help="website link to visit", required=True)
+    parser.add_argument("-u", "--username", help="username to log in with", required=True)
+    parser.add_argument("-p", "--password", help="password to log in with", required=True)
 
     args = parser.parse_args()
 
