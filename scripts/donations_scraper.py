@@ -9,7 +9,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from datetime import datetime
 
-
 from webdriver_manager.firefox import GeckoDriverManager
 
 def create_browser():
@@ -53,9 +52,9 @@ def main(browser, url, username, password):
 
     donations = browser.find_elements(by=By.CLASS_NAME, value='sqs-commerce-donation-content')
 
-    with open(f'donations_{datetime.today().strftime("%Y-%m-%d")}.csv', mode='w') as csv_file:
+    with open(f'donations/donations_{datetime.today().strftime("%Y-%m-%d")}.csv', mode='w') as csv_file:
         fieldnames = ['count', 'amount', 'parent_name', 'email', 'address', 'phone', 
-                        'student_name', 'description', 'school']
+                        'student_name', 'description', 'school', 'date']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
         writer.writeheader()
@@ -64,6 +63,8 @@ def main(browser, url, username, password):
 
             print()
             print(f"Scraping donation #{idx+1}")
+
+            date = element.find_elements(by=By.CLASS_NAME, value='date')[0].get_attribute('innerText')
 
             element.click()
 
@@ -95,7 +96,7 @@ def main(browser, url, username, password):
                         elif 'school' in key:
                             school = val
 
-            print(amount, parent_name, email, address, phone, student_name, description, school)
+            print(" | ".join([amount, parent_name, email, address, phone, student_name, description, school, date]))
             
             writer.writerow({
                 'count': idx+1, 
@@ -106,7 +107,8 @@ def main(browser, url, username, password):
                 'phone': phone, 
                 'student_name': student_name,
                 'description': description,
-                'school': school
+                'school': school, 
+                'date': date
                 })
 
             close = browser.find_element(by=By.CLASS_NAME, value='cancel')
@@ -141,4 +143,4 @@ if __name__ == "__main__":
             raise e
 
     else:
-        raise ValueError("Missing arguments! Run `python3 donations_parser.py --help`.")
+        raise ValueError("Missing arguments! Run `python3 donations_scraper.py --help`.")
