@@ -54,7 +54,7 @@ def clean_emails(emails):
 def create_browser():
 
     options = FirefoxOptions()
-    # options.add_argument("--headless")
+    options.add_argument("--headless")
 
     s=Service(GeckoDriverManager().install())
     browser = webdriver.Firefox(service=s, options=options)
