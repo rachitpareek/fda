@@ -4,7 +4,7 @@ import time
 import argparse
 from tqdm import tqdm
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -18,8 +18,6 @@ TYPE_TO_URL_MAP = {
     "policy": "https://hspolicy.debatecoaches.org/",
     "pf": "https://hspf.debatecoaches.org/Main/",
 }
-
-all_emails = []
 
 def strip_html(data):
 
@@ -49,7 +47,7 @@ def clean_emails(emails):
                 clean_emails.append(email[:email.index(tld)+4])
                 continue
 
-    return set(clean_emails)
+    return list(set(clean_emails))
 
 def create_browser():
 
@@ -58,12 +56,15 @@ def create_browser():
 
     s=Service(GeckoDriverManager().install())
     browser = webdriver.Firefox(service=s, options=options)
+    browser.set_page_load_timeout(10)
     browser.implicitly_wait(5)
-    print("Made browser...")
+    print("Made new browser...", id(browser))
 
     return browser
 
 def main(browser, url):
+
+    all_emails = []
 
     browser.get(url)
     print("Got webpage...")
@@ -75,6 +76,16 @@ def main(browser, url):
 
     for school_page in tqdm(school_pages):
 
+        if school_pages.index(school_page) % 20 == 0:
+
+            all_emails = clean_emails(all_emails)
+
+            print(all_emails)
+
+            browser.quit()
+
+            browser = create_browser()
+
         print(f"Opening {school_page}")
 
         browser.get(school_page)
@@ -85,18 +96,25 @@ def main(browser, url):
         for team_detail_page in team_detail_pages:
 
             # print(f"Opening {team_detail_page}")
+            try: 
+                
+                browser.get(team_detail_page)
 
-            browser.get(team_detail_page)
+                # They have a typo in this CSS Selector LOL, don't fix.
+                contact_info = browser.find_elements(by=By.CSS_SELECTOR, value='table[id="tblCites"] tr')
+                table_content = [i.get_attribute('innerHTML') for i in contact_info]
+                table_content = [strip_html(data) for data in table_content]
+                emails = flatten([extract_emails(data) for data in table_content])
 
-            # They have a typo in this CSS Selector LOL, don't fix.
-            contact_info = browser.find_elements(by=By.CSS_SELECTOR, value='table[id="tblCites"] tr')
-            table_content = [i.get_attribute('innerHTML') for i in contact_info]
-            table_content = [strip_html(data) for data in table_content]
-            emails = flatten([extract_emails(data) for data in table_content])
+                all_emails.extend(emails)
 
-            all_emails.extend(emails)
+            except TimeoutException:
+
+                continue
 
     browser.quit()
+
+    return all_emails
 
 if __name__ == "__main__":
 
@@ -113,7 +131,7 @@ if __name__ == "__main__":
 
         try:
 
-            main(browser, TYPE_TO_URL_MAP[args.type])
+            all_emails = main(browser, TYPE_TO_URL_MAP[args.type])
 
             all_emails = clean_emails(all_emails)
 

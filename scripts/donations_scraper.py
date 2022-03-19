@@ -64,58 +64,64 @@ def main(browser, url, username, password):
             print()
             print(f"Scraping donation #{idx+1}")
 
-            date = element.find_elements(by=By.CLASS_NAME, value='date')[0].get_attribute('innerText')
+            try: 
 
-            element.click()
+                date = element.find_elements(by=By.CLASS_NAME, value='date')[0].get_attribute('innerText')
 
-            time.sleep(2)
+                element.click()
 
-            dialog = browser.find_elements(by=By.CLASS_NAME, value='dialog-contribution-summary')[0]
+                time.sleep(0.5)
 
-            amount = dialog.find_elements(by=By.CLASS_NAME, value='contribution-amount')[0].get_attribute('innerText')
+                dialog = browser.find_elements(by=By.CLASS_NAME, value='dialog-contribution-summary')[0]
 
-            details = dialog.find_elements(by=By.TAG_NAME, value='div')
+                amount = dialog.find_elements(by=By.CLASS_NAME, value='contribution-amount')[0].get_attribute('innerText')
 
-            donor = details[2].get_attribute('innerText').split("<br>")[0].split('\n')
-            parent_name, email, address, phone = donor[0], donor[1], ' '.join(donor[2:5]), donor[5]
+                details = dialog.find_elements(by=By.TAG_NAME, value='div')
 
-            student_name, description, school = '', '', ''
-            if len(details) > 3:
-                addl_info = details[3].find_elements(by=By.CSS_SELECTOR, value="*")
-                for pair in [(addl_info[i], addl_info[i+1]) for i in range(len(addl_info)-1)]:
+                donor = details[2].get_attribute('innerText').split("<br>")[0].split('\n')
+                parent_name, email, address, phone = donor[0], donor[1], ' '.join(donor[2:5]), donor[5]
 
-                    if pair[0].tag_name == 'div' and pair[1].tag_name == 'table':
-                        
-                        key = pair[0].get_attribute('innerText').lower()
-                        val = pair[1].find_elements(by=By.TAG_NAME, value='td')[0].get_attribute('innerText')
+                student_name, description, school = '', '', ''
+                if len(details) > 3:
+                    addl_info = details[3].find_elements(by=By.CSS_SELECTOR, value="*")
+                    for pair in [(addl_info[i], addl_info[i+1]) for i in range(len(addl_info)-1)]:
 
-                        if 'name' in key:
-                            student_name = val
-                        elif 'donation' in key:
-                            description = val
-                        elif 'school' in key:
-                            school = val
+                        if pair[0].tag_name == 'div' and pair[1].tag_name == 'table':
+                            
+                            key = pair[0].get_attribute('innerText').lower()
+                            val = pair[1].find_elements(by=By.TAG_NAME, value='td')[0].get_attribute('innerText')
 
-            print(" | ".join([amount, parent_name, email, address, phone, student_name, description, school, date]))
-            
-            writer.writerow({
-                'count': idx+1, 
-                'amount': amount, 
-                'parent_name': parent_name, 
-                'email': email, 
-                'address': address, 
-                'phone': phone, 
-                'student_name': student_name,
-                'description': description,
-                'school': school, 
-                'date': date
-                })
+                            if 'name' in key:
+                                student_name = val
+                            elif 'donation' in key:
+                                description = val
+                            elif 'school' in key:
+                                school = val
 
-            close = browser.find_element(by=By.CLASS_NAME, value='cancel')
+                print(" | ".join([amount, parent_name, email, address, phone, student_name, description, school, date]))
+                
+                writer.writerow({
+                    'count': idx+1, 
+                    'amount': amount, 
+                    'parent_name': parent_name, 
+                    'email': email, 
+                    'address': address, 
+                    'phone': phone, 
+                    'student_name': student_name,
+                    'description': description,
+                    'school': school, 
+                    'date': date
+                    })
 
-            close.click()
+                close = browser.find_element(by=By.CLASS_NAME, value='cancel')
 
-            time.sleep(2)
+                close.click()
+
+                time.sleep(0.5)
+
+            except:
+
+                print(f"Failed scraping donation #{idx+1}")
 
     browser.quit()
 
